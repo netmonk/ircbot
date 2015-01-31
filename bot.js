@@ -1,3 +1,6 @@
+//Irc bot in early development stage 
+//use it at your own risk to be banned :) 
+
 var config = {
 	channels: ["#testingtipbot","#cryptofr"],
 	server: "chat.freenode.net",
