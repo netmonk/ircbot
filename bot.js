@@ -1,5 +1,6 @@
 //Irc bot in early development stage 
 //use it at your own risk to be banned :) 
+// a new line for testing
 
 var config = {
 	channels: ["#testingtipbot","#cryptofr"],
