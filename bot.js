@@ -1,5 +1,5 @@
 var config = {
-	channels: ["#testingtipbot"],
+	channels: ["#testingtipbot","#cryptofr"],
 	server: "chat.freenode.net",
 	botName: "netmonkbot"
 };
@@ -43,12 +43,12 @@ var bot = new irc.Client(config.server, config.botName, {
 
 });
 
-bot.addListener("join", function(channel, who) {
+//bot.addListener("join", function(channel, who) {
 	// Welcome them in!
-    if (who != config.botName) {
-	setTimeout(function() {bot.say(channel, who + "...dude...welcome back!");},1250);
-	}
-});
+//    if (who != config.botName) {
+//	setTimeout(function() {bot.say(channel, who + "...dude...welcome back!");},1250);
+//	}
+//});
 
 bot.addListener("message", function(from, to, text, message) {
 	
@@ -111,29 +111,46 @@ function parsecommand(from, to, text) {
                         bot.part(command[1],"brb",false);
 
 		}
-	} else if (command[0] == "!btc") {
-	    var req = https.request(options, function(res) {
-		res.setEncoding('utf8');
-		res.on('data', function (data) {
-		    console.log(data); 
-		    jsondata = JSON.parse(data);
-		    //var tmp1 = Object.keys(jsondata); 
-		    tmp1=jsondata.ticker;
-		    console.log(tmp1);
-		    var tmp2 = Object.keys(tmp1);
-		    console.log(tmp2);
-		    var base = tmp1.base;
-		    var target = tmp1.target;
-		    var price = tmp1.price;
-		    var volume = tmp1.volume;
-		    console.log("Currently 1 "+base+" is exchanged at "+price+" "+target);
-		    bot.say(to, "Currently 1 "+base+" is exchanged at "+price+" "+target);
-		});
-	    });
-	    req.on('error', function(e) {
-		console.log('problem with request: ' + e.message);
-	    });
-	    req.end();
+	} else if (command[0] == "!val") {
+	    if (command.length != 3) { 
+		bot.say(to, "i need two arguments like: !val btc eur");
+		} else {
+		    var options = {
+			hostname: 'www.cryptonator.com'
+			,port: '443'
+			,path: '/api/ticker/btc-eur'
+			,method: 'GET'
+			,headers: { 'Content-Type': 'application/json' }
+		    };
+		    options.path="/api/ticker/"+command[1]+"-"+command[2];
+		    var req = https.request(options, function(res) {
+			res.setEncoding('utf8');
+			res.on('data', function (data) {
+			    console.log(data); 
+			    jsondata = JSON.parse(data);
+			    //var tmp1 = Object.keys(jsondata);
+			    console.log(jsondata.success);
+			    if (jsondata.success) {
+				tmp1=jsondata.ticker;
+				console.log(tmp1);
+				var tmp2 = Object.keys(tmp1);
+				console.log(tmp2);
+				var base = tmp1.base;
+				var target = tmp1.target;
+				var price = tmp1.price;
+				var volume = tmp1.volume;
+				console.log("Currently 1 "+base+" is exchanged at "+price+" "+target);
+				bot.say(to, "Currently 1 "+base+" is exchanged at "+price+" "+target);
+				} else {
+				    bot.say(to, "error, cannot retrieve value for this currency");
+				};
+			});
+			req.on('error', function(e) {
+			    console.log('problem with request: ' + e.message);
+			});
+			req.end();
+		    });
+		 };   
 	}
 }	
 
