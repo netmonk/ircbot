@@ -43,6 +43,7 @@ var bot = new irc.Client(config.server, config.botName, {
 //	}
 //});
 
+
 bot.addListener("message", function(from, to, text, message) 
 		{	
 		    if (text.match(config.botName)) 
@@ -64,11 +65,58 @@ bot.addListener("message", function(from, to, text, message)
 
 		});
 
+
 function parsecommand(from, to, text) 
 {
     var reg=new RegExp("[ ]+","g");
     var trimmed = text.trim()
     var command = trimmed.split(reg);
+
+    function getvalue(base, target, callback)
+    {
+	console.log("request received");
+	var options = 
+	    {
+		hostname: 'www.cryptonator.com'
+		,port: '443'
+		,path: '/api/ticker/btc-eur'
+		,method: 'GET'
+		,headers: { 'Content-Type': 'application/json', 'user-agent': 'Mozilla/5.0' }
+	    };
+	options.path="/api/ticker/"+base+"-"+target;
+	console.log(options);
+	var req = https.request(options, function(res) 
+				{
+				    console.log("statusCode: ", res.statusCode);
+				    console.log("headers: ", res.headers);
+
+				    console.log("sending request with options:"+ options);
+				    res.setEncoding('utf8');
+				    res.on('data', function (data) 
+					   {
+					       console.log(data); 
+					       jsondata = JSON.parse(data);
+					       //var tmp1 = Object.keys(jsondata);
+					       console.log(jsondata.success);
+					       if (jsondata.success) 
+					       {
+						   var tmp1=jsondata.ticker;
+						   console.log(tmp1);
+						   var price = tmp1.price;
+						   callback(price)
+					       } else 
+					       {
+						   bot.say(to, "error, cannot retrieve value for this currency");
+					       };
+					   });
+				});
+	req.end();
+	req.on('error', function(e) {
+	    console.log('problem with request: ' + e.message);
+	});
+	
+    }
+
     if (from == 'hegemoOn') 
     {
 	for (var i=0; i< command.length; i++) 
@@ -128,54 +176,25 @@ function parsecommand(from, to, text)
 	} else 
 	{
 	    console.log("request received");
-	    var options = 
-		{
-		    hostname: 'www.cryptonator.com'
-		    ,port: '443'
-		    ,path: '/api/ticker/btc-eur'
-		    ,method: 'GET'
-		    ,headers: { 'Content-Type': 'application/json', 'user-agent': 'Mozilla/5.0' }
-
-		};
-	    options.path="/api/ticker/"+command[1]+"-"+command[2];
-	    console.log(options);
-	    var req = https.request(options, function(res) 
-				    {
-					console.log("sending request with options:"+ options);
-					res.setEncoding('utf8');
-					res.on('data', function (data) 
-					       {
-						   console.log(data); 
-						   jsondata = JSON.parse(data);
-						   //var tmp1 = Object.keys(jsondata);
-						   console.log(jsondata.success);
-						   if (jsondata.success) 
-						   {
-						       var tmp1=jsondata.ticker;
-						       console.log(tmp1);
-						       var tmp2 = Object.keys(tmp1);
-						       console.log(tmp2);
-						       var base = tmp1.base;
-						       var target = tmp1.target;
-						       var price = tmp1.price;
-						       var volume = tmp1.volume;
-						       console.log("Currently 1 "+base+" is exchanged at "+price+" "+target);
-						       bot.say(to, "Currently 1 "+base+" is exchanged at "+price+" "+target);
-						   } else 
-						   {
-						       bot.say(to, "error, cannot retrieve value for this currency");
-						   };
-					       });
-				    });
-	    req.on('error', function(e) {
-		console.log('problem with request: ' + e.message);
+	    getvalue(command[1], command[2], function(price){
+		bot.say(to, "one "+command[1]+" is estimated to "+price+" "+command[2]);
+		});
+	}
+    } else if  (command[0] == "!convert") 
+    {
+	if (command.length != 4) 
+	{ 
+	    bot.say(to, "i need three arguments like: !val btc eur");
+	} else 
+	{
+	    console.log("request received");
+	    getvalue(command[2],command[3], function(price){
+		var finalprice = price*command[1];
+		bot.say(to,command[1]+" "+command[2]+" is estimated to "+finalprice+" "+command[3]+" !" );
 	    });
-	    req.end();
-
-	}   
-    }
-}	
-
+	}    
+    }	
+}
 bot.addListener('error', function(message) {
     console.log('error: ', message);
 });
