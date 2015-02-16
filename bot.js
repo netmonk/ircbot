@@ -184,7 +184,7 @@ function parsecommand(from, to, text)
     {
 	if (command.length != 4) 
 	{ 
-	    bot.say(to, "i need three arguments like: !val btc eur");
+	    bot.say(to, "i need three arguments like: !convert 100 btc eur");
 	} else 
 	{
 	    console.log("request received");
